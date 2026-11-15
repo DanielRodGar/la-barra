@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#ffffff">
+<title>Conteo · La Barra</title>
+<style>
+  :root{ --ink:#1c1c1e; --muted:#8e8e93; --line:#f2f2f7; --line2:#e5e5ea; --soft:#f9f9fb;
+         --brand:#c8811a; --brand-soft:#fff7ea; --brand-line:#f1cf9a; --ok:#2e7d4f; --ok-soft:#e3f4e8; --warn:#b3261e; }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%}
+  body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#fff;color:var(--ink);display:flex;flex-direction:column}
+  input,select,textarea,button{font-family:inherit}
+  input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  input[type=number]{-moz-appearance:textfield}
+
+  .hd{position:sticky;top:0;z-index:5;background:#fff;padding:14px 16px 10px;border-bottom:1px solid #eee}
+  .title{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+  .title b{font-size:17px}
+  .title span{font-size:12px;color:var(--muted)}
+  .reset{border:0;background:none;color:var(--muted);font-size:12px;padding:0;text-decoration:underline}
+  .reset.conf{color:var(--warn);font-weight:700;text-decoration:none}
+  .who{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin-bottom:10px}
+  .who select{flex:1;border:1px solid var(--line2);border-radius:8px;padding:8px;font-size:15px;background:var(--soft);color:var(--ink)}
+  .who.err select{border-color:var(--warn);background:#fdeeed}
+  .tabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:0 16px}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{flex:0 0 auto;min-width:68px;text-align:center;font-size:12.5px;font-weight:600;padding:8px 10px;border-radius:8px;background:#f2f2f7;color:var(--muted);border:0}
+  .tab.on{background:var(--ink);color:#fff}
+  .tab.ok{background:var(--ok-soft);color:var(--ok)}
+  .tab.mid{background:var(--brand-soft);color:var(--brand)}
+  .pend{background:#fdeeed;color:var(--warn);border-radius:10px;padding:10px 12px;font-size:13px;margin-top:12px;line-height:1.4}
+  .pend button{border:0;background:none;color:var(--warn);font-weight:700;text-decoration:underline;padding:0 2px;font-size:13px}
+
+  .body{flex:1;padding:2px 16px 120px;max-width:560px;width:100%;margin:0 auto}
+  .sec{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);padding:18px 0 2px}
+  .hint{font-size:12.5px;color:var(--muted);margin:8px 0 2px;line-height:1.4}
+  .r{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+  .r .n{font-size:15px;font-weight:500}
+  .r .n .ml{font-size:12px;font-weight:600;color:var(--brand);background:var(--brand-soft);border-radius:5px;padding:1px 5px;margin-left:2px;white-space:nowrap}
+  .r .s{font-size:11px;color:#aeaeb2;margin-top:1px}
+  .r .s .t{color:var(--brand);font-weight:700}
+  .ins{display:flex;gap:6px;align-items:flex-end;flex-shrink:0}
+  .ins label{display:flex;flex-direction:column;align-items:center;font-size:10px;color:#aeaeb2;gap:2px}
+  .r input{width:72px;height:42px;border:1px solid var(--line2);border-radius:10px;text-align:center;font-size:18px;font-weight:600;background:var(--soft);color:var(--ink)}
+  .r input.cj{width:58px}
+  .r select.cap{width:76px;height:42px;border:1px solid var(--line2);border-radius:10px;background:var(--soft);font-size:15px;font-weight:600;text-align:center;color:var(--ink);padding:0 4px}
+  .r select.cap.has{background:var(--brand-soft);border-color:var(--brand-line)}
+  .r.compact select.cap{height:36px}
+  .r input:focus{outline:none;border-color:var(--brand);background:#fff}
+  .r input.has{background:var(--brand-soft);border-color:var(--brand-line)}
+  .r.miss input,.r.miss select{border-color:var(--warn);background:#fdeeed}
+
+  /* alcohol */
+  .alc{display:block}
+  .alc .top{display:flex;justify-content:space-between;align-items:baseline}
+  .lotes{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+  .lote{display:flex;gap:6px;align-items:flex-end}
+  .lote select{flex:1;height:42px;border:1px solid var(--line2);border-radius:10px;background:var(--soft);font-size:15px;padding:0 8px;color:var(--ink)}
+  .lote select.has{background:var(--brand-soft);border-color:var(--brand-line)}
+  .lote .x{width:34px;height:42px;border:0;background:none;color:#aeaeb2;font-size:20px}
+  .alc .bot{display:flex;justify-content:space-between;align-items:flex-end;margin-top:6px}
+  .link{border:0;background:none;color:var(--brand);font-size:13px;font-weight:600;padding:6px 0}
+
+  /* insumos estado */
+  .est{display:flex;gap:6px}
+  .est button{height:40px;padding:0 12px;border-radius:10px;border:1px solid var(--line2);background:var(--soft);font-size:13px;font-weight:600;color:var(--muted)}
+  .est button.on.ok{background:var(--ok-soft);border-color:#b7dfc3;color:var(--ok)}
+  .est button.on.buy{background:#fdeeed;border-color:#f0b9b4;color:var(--warn)}
+  .r.miss .est button{border-color:var(--warn)}
+
+  .secwrap{margin-top:6px}
+  .sech{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;border:0;background:none;padding:14px 0 4px;text-align:left;cursor:pointer}
+  .sech .tt{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink)}
+  .sech .st{font-size:11px;font-weight:600;color:var(--muted);margin-left:6px;text-transform:none;letter-spacing:0}
+  .sech .st.ok{color:var(--ok)} .sech .st.mid{color:var(--brand)}
+  .sech .ch{font-size:13px;color:var(--muted);transition:transform .2s}
+  .secwrap.col .ch{transform:rotate(-90deg)}
+  .secwrap.col .secbody{display:none}
+  .r.compact{padding:5px 0}
+  .r.compact .n{font-size:14px}
+  .r.compact input{height:36px}
+  .rev .sec{padding:12px 0 2px;font-size:10px}
+  .rev .r,.rev .r.compact{padding:3px 0;align-items:center;border-bottom:1px solid #f6f6f8}
+  .rev .r .n{font-size:13px;font-weight:400}
+  .rev .r .n .ml{font-size:10px;padding:0 4px}
+  .rev .tot{font-size:13px;font-weight:700;white-space:nowrap;text-align:right}
+  .rev .tot small{font-size:10px;color:var(--muted);font-weight:500}
+  .rev .r.big .n,.rev .r.big .tot{font-size:14px}
+  textarea{width:100%;min-height:76px;border:1px solid var(--line2);border-radius:10px;padding:10px;font-size:15px;background:var(--soft);margin-top:6px;resize:vertical}
+
+  .ft{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid #eee;padding:10px 16px calc(12px + env(safe-area-inset-bottom))}
+  .ft .in{max-width:560px;margin:0 auto;display:flex;gap:10px;align-items:center}
+  .ft .sum{font-size:10.5px;color:var(--muted);flex:1;min-width:0;line-height:1.15;display:flex;flex-wrap:nowrap;gap:12px;overflow-x:auto;scrollbar-width:none}
+  .ft .sum::-webkit-scrollbar{display:none}
+  .ft .sum>div{flex:0 0 auto}
+  .ft .sum b{display:block;color:var(--ink);font-size:14px}
+  .ft .msg{color:var(--warn);font-size:12px;font-weight:600}
+  .ft button{border:0;background:var(--brand);color:#fff;font-weight:700;font-size:15px;border-radius:12px;padding:14px 20px;white-space:nowrap}
+  .ft button.back{background:#f2f2f7;color:var(--ink);padding:14px 16px}
+  .ft button:disabled{opacity:.5}
+
+  .done{text-align:center;padding:70px 20px}
+  .done .big{font-size:56px}
+  .done h2{margin:10px 0 4px}
+  .done p{color:var(--muted);margin:0}
+</style>
+</head>
+<body>
+
+<div class="hd">
+  <div class="title"><b>🍺 Conteo de inventario</b><span><span id="fecha"></span><span id="resetWrap" style="display:none"> · <button class="reset" id="reset">↺ Borrar</button></span></span></div>
+  <div class="who" id="who">👤 <select id="emp"></select></div>
+  <div class="tabs" id="tabs"></div>
+</div>
+
+<div class="body" id="body"></div>
+
+<div class="ft"><div class="in" id="ft"></div></div>
+
+<script>
+/* =====================================================================
+   CONFIGURACIÓN — productos, ubicaciones y empleados
+   ===================================================================== */
+const CONFIG = {
+  negocio: "La Barra",
+  webhookUrl: "https://danielrodriguez.app.n8n.cloud/webhook/conteo-barra",   // n8n recibe el conteo aquí
+  whatsapp: "",              // ← número destino, ej. "5212291234567"
+  empleados: ["Richard", "Christian"],
+
+  // Medidas de botella de alcohol que se pueden elegir (ml)
+  medidasAlcohol: [700, 750, 950, 1000, 1750],
+
+  /* SECCIONES (qué se cuenta)
+     tipo "pz"      → el total se da en piezas
+     tipo "ml"      → el total se da en ml (cerradas × capacidad + ml de la abierta)
+     tipo "alcohol" → como "ml" pero eligiendo la medida de cada botella */
+  secciones: {
+    cerveza: { titulo:"Cerveza", tipo:"pz", items:[
+      { id:"pacifico", nombre:"Pacífico",       ml:355, porCaja:24, empaque:"caja" },
+      { id:"corona",   nombre:"Corona",         ml:355, porCaja:24, empaque:"caja" },
+      { id:"victoria", nombre:"Victoria",       ml:355, porCaja:24, empaque:"caja" },
+      { id:"michelob", nombre:"Michelob Ultra", ml:355, porCaja:24, empaque:"caja" },
+      { id:"stella",   nombre:"Stella Artois",  ml:330, porCaja:24, empaque:"caja" },
+      { id:"xx",       nombre:"XX Lager",       ml:325, porCaja:20, empaque:"cartón" },
+      { id:"tecate",   nombre:"Tecate Light",   ml:325, porCaja:20, empaque:"cartón" },
+      { id:"indio",    nombre:"Indio",          ml:325, porCaja:20, empaque:"cartón" }
+    ]},
+    caguama: { titulo:"Caguama", tipo:"ml", items:[
+      { id:"caguama_clara",  nombre:"Caguama Corona (clara)",    ml:1200, porCaja:12, empaque:"caja" },
+      { id:"caguama_oscura", nombre:"Caguama Victoria (oscura)", ml:1200, porCaja:12, empaque:"caja" }
+    ]},
+    refrescos: { titulo:"Refrescos de 600 ml", tipo:"pz", compacta:true, items:[
+      { id:"coca600",    nombre:"Coca-Cola",     ml:600 },
+      { id:"manzanita",  nombre:"Manzanita",     ml:600 },
+      { id:"crush600",   nombre:"Orange Crush",  ml:600 },
+      { id:"drpepper",   nombre:"Dr Pepper",     ml:600 },
+      { id:"sangria",    nombre:"Sangría",       ml:600 },
+      { id:"mineral600", nombre:"Agua mineral",  ml:600 },
+      { id:"twist",      nombre:"Twist",         ml:600 },
+      { id:"squirt600",  nombre:"Squirt",        ml:600 },
+      { id:"agua600",    nombre:"Agua natural",  ml:600 }
+    ]},
+    preparacion: { titulo:"Para preparados", tipo:"ml", items:[
+      { id:"coca3l",       nombre:"Coca-Cola",       ml:3000 },
+      { id:"crushlimon",   nombre:"Crush de limón",  ml:2000 },
+      { id:"squirt2l",     nombre:"Squirt",          ml:2000 },
+      { id:"mineral2l",    nombre:"Agua mineral",    ml:2000 },
+      { id:"clamato",      nombre:"Clamato",         ml:2500 },
+      { id:"vive100",      nombre:"Vive 100",        ml:400 },
+      { id:"jugo_naranja", nombre:"Jugo de naranja", ml:1000 },
+      { id:"jugo_toronja", nombre:"Jugo de toronja", ml:1000 }
+    ]},
+    alcohol: { titulo:"Alcohol", tipo:"alcohol", items:[
+      { id:"ron",     nombre:"Ron (Bacardí)" },
+      { id:"whisky",  nombre:"Whisky" },
+      { id:"tequila", nombre:"Tequila" },
+      { id:"vodka",   nombre:"Vodka" }
+    ]}
+  },
+
+  /* UBICACIONES y qué se cuenta en cada una
+     modo "sueltas"  → solo botellas sueltas
+     modo "cajas"    → cajas/cartones cerrados + sueltas
+     modo "abierta"  → cerradas + ml aprox. de la abierta
+     modo "cerradas" → solo cerradas */
+  ubicaciones: [
+    { id:"refri1", nombre:"Refri 1", contar:{ cerveza:"sueltas", caguama:"abierta" } },
+    { id:"refri2", nombre:"Refri 2", contar:{ cerveza:"sueltas", caguama:"abierta" } },
+    { id:"refri3", nombre:"Refri 3", contar:{ cerveza:"sueltas", caguama:"abierta" } },
+    { id:"barra",  nombre:"Barra",   contar:{ refrescos:"sueltas", preparacion:"abierta", alcohol:"abierta" } },
+    { id:"bodega", nombre:"Bodega",  contar:{ cerveza:"cajas", caguama:"cajas", refrescos:"sueltas", preparacion:"cerradas", alcohol:"cerradas" } }
+  ],
+
+  /* INSUMOS: cada grupo es una sección plegable dentro de las ubicaciones indicadas
+     unidad "estado"  → solo Suficiente / Comprar
+     unidad "botella" → medida de botella (se elige de la lista "medidas") + cerradas + ml de la abierta */
+  // Barra: lo que hay (incluye abiertos). Bodega: paquetes/botellas cerrados eligiendo su medida.
+  insumosEn: { barra:"total", bodega:"cerradas" },
+  medidasPaquete: { g:[100, 250, 500, 1000, 2000], ml:[150, 250, 500, 750, 946, 1000, 3780] },
+  insumos: [
+    { grupo:"Desechables", items:[
+      { id:"vasos1l",    nombre:"Vasos de 1 L",   unidad:"pzas" },
+      { id:"vasos500",   nombre:"Vasos de 500 ml",unidad:"pzas" },
+      { id:"vasosmini",  nombre:"Vasos mini",     unidad:"pzas" },
+      { id:"popotes",    nombre:"Popotes",        unidad:"pzas" },
+      { id:"banderillas",nombre:"Banderillas",    unidad:"pzas" }
+    ]},
+    { grupo:"Escarchados y dulces", items:[
+      { id:"chile_polvo",   nombre:"Chile en polvo",   unidad:"g" },
+      { id:"miguelito_r",   nombre:"Miguelito rojo",   unidad:"g" },
+      { id:"miguelito_a",   nombre:"Miguelito azul",   unidad:"g" },
+      { id:"forritos_r",    nombre:"Forritos rojo",    unidad:"g" },
+      { id:"forritos_a",    nombre:"Forritos azul",    unidad:"g" },
+      { id:"betamex_r",     nombre:"Betamex rojo",     unidad:"pzas" },
+      { id:"betamex_a",     nombre:"Betamex azul",     unidad:"pzas" },
+      { id:"gomitas_icee",  nombre:"Gomitas Icee",     unidad:"g" },
+      { id:"gomitas_gusano",nombre:"Gomitas gusano",   unidad:"g" },
+      { id:"gomitas_delfin",nombre:"Gomitas delfín",   unidad:"g" },
+      { id:"papas",         nombre:"Papas chidas",     unidad:"pzas" },
+      { id:"endulzante",    nombre:"Endulzante",       unidad:"botella", medidas:[500, 750, 1000, 1500, 2000] }
+    ]},
+    { grupo:"Salsas y líquidos", items:[
+      { id:"valentina",   nombre:"Valentina",          unidad:"ml" },
+      { id:"inglesa",     nombre:"Salsa inglesa",      unidad:"ml" },
+      { id:"maggi",       nombre:"Jugo Maggi",         unidad:"ml" },
+      { id:"tabasco",     nombre:"Salsa Tabasco",      unidad:"ml" },
+      { id:"curacao",     nombre:"Curaçao",            unidad:"ml" },
+      { id:"crema_coco",  nombre:"Crema de coco",      unidad:"ml" },
+      { id:"jugo_pina",   nombre:"Jugo de piña",       unidad:"ml" },
+      { id:"evaporada",   nombre:"Leche evaporada",    unidad:"ml" },
+      { id:"condensada",  nombre:"Leche condensada",   unidad:"ml" },
+      { id:"frutos_rojos",nombre:"Frutos rojos",       unidad:"g" }
+    ]},
+    { grupo:"Frescos", soloEn:["barra"], items:[
+      { id:"limon",       nombre:"Limón",       unidad:"estado" },
+      { id:"pina",        nombre:"Piña",        unidad:"estado" },
+      { id:"hierbabuena", nombre:"Hierbabuena", unidad:"estado" },
+      { id:"sal",         nombre:"Sal",         unidad:"estado" },
+      { id:"pimienta",    nombre:"Pimienta",    unidad:"estado" }
+    ]},
+    { grupo:"Otros", items:[
+      { id:"cigarros", nombre:"Cigarros", unidad:"pzas" }
+    ]}
+  ]
+};
+/* ===================== FIN DE CONFIGURACIÓN ===================== */
+
+const urlEnvio = () => CONFIG.webhookUrl || (location.protocol.startsWith("http") ? location.origin + location.pathname : "");
+const STORE_KEY = "conteo_barra_v8";
+const $ = id => document.getElementById(id);
+const num = x => parseFloat(x)||0;
+const lleno = x => x!==undefined && x!==null && x!=="";
+const fmt = n => Math.round(n).toLocaleString("es-MX");
+const mlTxt = ml => !ml ? "" : (ml>=1000 ? (ml/1000).toString().replace(".",",")+" L" : ml+" ml");
+const hoy = new Date();
+const fechaISO = hoy.toLocaleDateString("en-CA");
+const fechaTxt = hoy.toLocaleDateString("es-MX",{weekday:"long",day:"numeric",month:"long"});
+$("fecha").textContent = fechaTxt;
+
+const SECS = CONFIG.secciones;
+CONFIG.insumos.forEach((g,i)=>{
+  const secId = "ins"+i;
+  SECS[secId] = { titulo:g.grupo, tipo:"insumo", compacta:true, items:g.items };
+  CONFIG.ubicaciones.filter(u=>CONFIG.insumosEn[u.id] && (!g.soloEn || g.soloEn.includes(u.id)))
+    .forEach(u=>u.contar[secId]=CONFIG.insumosEn[u.id]);
+});
+const PASOS = [
+  ...CONFIG.ubicaciones.map(u=>({tipo:"ubic", id:u.id, nombre:u.nombre, u})),
+  {tipo:"rev", id:"rev", nombre:"Revisar"}
+];
+
+const nuevoEstado = ()=>({ paso:0, empleado:"", notas:"", v:{}, enviado:false });
+let S = nuevoEstado();
+try{ const g=JSON.parse(localStorage.getItem(STORE_KEY)||"null"); if(g && g.fecha===fechaISO) S=g.S; }catch(e){}
+const guardar = ()=>{ try{ localStorage.setItem(STORE_KEY, JSON.stringify({fecha:fechaISO,S})); }catch(e){} };
+const V = k => S.v[k] || (S.v[k]={});
+const K = (u,it) => u.id+"|"+it.id;
+
+/* ---------------- cálculos ---------------- */
+function lotes(key){ const x=V(key); if(!x.lotes) x.lotes=[{medida:"",n:""}]; return x.lotes; }
+
+// total de un producto en una ubicación (pz para tipo pz, ml para ml/alcohol)
+function totalEn(u,secId,it){
+  const modo = u.contar[secId], x = V(K(u,it)), sec = SECS[secId];
+  if(sec.tipo==="insumo"){
+    if(it.unidad==="estado") return 0;
+    if(modo==="cerradas") return esPaquete(it) ? num(x.sueltas)*capBot(u,it) : num(x.val);
+    return it.unidad==="botella" ? num(x.sueltas)*capBot(u,it) + num(x.ml) : num(x.val);
+  }
+  if(sec.tipo==="alcohol"){
+    return lotes(K(u,it)).reduce((s,l)=>s+num(l.medida)*num(l.n),0) + (modo==="abierta"?num(x.ml):0);
+  }
+  const piezas = (modo==="cajas" ? num(x.cajas)*(it.porCaja||1) : 0) + num(x.sueltas);
+  if(sec.tipo==="pz") return piezas;
+  return piezas*it.ml + (modo==="abierta" ? num(x.ml) : 0);
+}
+function completoEn(u,secId,it){
+  const modo = u.contar[secId], x = V(K(u,it)), sec = SECS[secId];
+  if(sec.tipo==="insumo"){
+    const okCap = it.ml || num(x.sueltas)===0 || num(x.cap)>0;
+    if(it.unidad==="estado") return lleno(x.val);
+    if(modo==="cerradas") return esPaquete(it) ? lleno(x.sueltas) && okCap : lleno(x.val);
+    return it.unidad==="botella" ? lleno(x.sueltas) && lleno(x.ml) && okCap : lleno(x.val);
+  }
+  if(sec.tipo==="alcohol"){
+    const okL = lotes(K(u,it)).every(l=>lleno(l.n) && (num(l.n)===0 || lleno(l.medida)));
+    return okL && (modo!=="abierta" || lleno(x.ml));
+  }
+  if(modo==="cajas")   return lleno(x.cajas) && lleno(x.sueltas);
+  if(modo==="abierta") return lleno(x.sueltas) && lleno(x.ml);
+  return lleno(x.sueltas);
+}
+const ubicsDe = secId => CONFIG.ubicaciones.filter(u=>u.contar[secId]);
+const totalGlobal = (secId,it) => ubicsDe(secId).reduce((s,u)=>s+totalEn(u,secId,it),0);
+const unidadSec = secId => SECS[secId].tipo==="pz" ? "pzas" : "ml";
+const MED_KEY = "conteo_barra_medidas";
+let MEDIDAS = {}; try{ MEDIDAS = JSON.parse(localStorage.getItem(MED_KEY)||"{}"); }catch(e){}
+const capBot = (u,it) => it.ml || num(V(K(u,it)).cap);
+const esPaquete = it => ["g","ml","botella"].includes(it.unidad);
+const unBase = it => it.unidad==="botella" ? "ml" : it.unidad;
+const medTxt = (m,it) => unBase(it)==="g" ? (m>=1000 ? (m/1000).toString().replace(".",",")+" kg" : m+" g") : mlTxt(m);
+const medidasDe = it => it.medidas || CONFIG.medidasPaquete[unBase(it)] || [];
+const unidadIt = (secId,it) => SECS[secId].tipo==="insumo" ? unBase(it) : unidadSec(secId);
+const estadoIns = (secId,it) => { const u=ubicsDe(secId)[0]; return u ? V(K(u,it)).val : ""; };
+// texto del total global de un producto (para revisión y WhatsApp)
+function valGlobal(secId,it){
+  if(SECS[secId].tipo==="insumo" && it.unidad==="estado") return estadoIns(secId,it)||"—";
+  return `${fmt(totalGlobal(secId,it))} ${unidadIt(secId,it)}`;
+}
+function desglose(secId,it){
+  return ubicsDe(secId).map(u=>{ const t=totalEn(u,secId,it); return t ? `${u.nombre} ${fmt(t)}` : null; })
+    .filter(Boolean).join(" · ") || "sin existencia";
+}
+
+/* ---------------- render ---------------- */
+function inp(key,k,cls="",dec=false){
+  const val = V(key)[k] ?? "";
+  return `<input type="number" inputmode="${dec?'decimal':'numeric'}" min="0" enterkeyhint="next"
+    class="${cls} ${lleno(val)?'has':''}" data-key="${key}" data-k="${k}" value="${val}" placeholder="–">`;
+}
+
+function renderTabs(){
+  const sc = $("tabs").scrollLeft;
+  $("tabs").innerHTML = PASOS.map((p,i)=>{
+    const est = estadoPaso(i);
+    const cls = i===S.paso ? "on" : est;
+    return `<button class="tab ${cls}" data-i="${i}">${p.nombre}${est==="ok"?" ✓":est==="mid"?" •":""}</button>`;
+  }).join("");
+  $("tabs").querySelectorAll(".tab").forEach(t=>t.onclick=()=>irA(+t.dataset.i));
+  $("tabs").scrollLeft = sc;
+}
+
+function render(scroll=true){
+  $("emp").innerHTML = `<option value="">Selecciona tu nombre…</option>` +
+    CONFIG.empleados.map(e=>`<option ${e===S.empleado?"selected":""}>${e}</option>`).join("");
+  $("emp").disabled = S.enviado;
+  renderTabs();
+  const on = $("tabs").querySelector(".on"); if(on && on.scrollIntoView) on.scrollIntoView({inline:"center",block:"nearest"});
+
+  if(S.enviado) return renderFin();
+  const P = PASOS[S.paso];
+  if(P.tipo==="ubic") renderUbic(P.u);
+  else renderRev();
+  if(scroll) window.scrollTo(0,0);
+}
+
+function subTxt(u,secId,it){
+  const modo=u.contar[secId], t=totalEn(u,secId,it), un=unidadSec(secId);
+  const base = {sueltas: SECS[secId].tipo==="pz" ? "botellas sueltas" : "cerradas",
+                cajas: `${it.empaque||"caja"} de ${it.porCaja}`,
+                abierta: "cerradas + ml de la abierta",
+                cerradas: "botellas cerradas"}[modo];
+  return `${base}${t ? ` · <span class="t">= ${fmt(t)} ${un}</span>` : ""}`;
+}
+
+function filaNormal(u,secId,it){
+  const modo=u.contar[secId], key=K(u,it);
+  let campos;
+  if(modo==="cajas")        campos = `<label>${it.empaque==="cartón"?"cartones":"cajas"}${inp(key,"cajas","cj")}</label><label>sueltas${inp(key,"sueltas","cj")}</label>`;
+  else if(modo==="abierta") campos = `<label>cerradas${inp(key,"sueltas","cj")}</label><label>ml abierta${inp(key,"ml","cj")}</label>`;
+  else                      campos = `<label>${modo==="cerradas"?"cerradas":"sueltas"}${inp(key,"sueltas")}</label>`;
+  return `<div class="r ${SECS[secId].compacta?"compact":""}" id="r_${u.id}_${it.id}">
+    <div><div class="n">${it.nombre} <span class="ml">${mlTxt(it.ml)}</span></div>
+      <div class="s" id="s_${u.id}_${it.id}">${subTxt(u,secId,it)}</div></div>
+    <div class="ins">${campos}</div></div>`;
+}
+
+function filaAlcohol(u,it){
+  const key=K(u,it), modo=u.contar.alcohol, L=lotes(key), t=totalEn(u,"alcohol",it);
+  return `<div class="r alc" id="r_${u.id}_${it.id}">
+    <div class="top"><div class="n">${it.nombre}</div>
+      <div class="s" id="s_${u.id}_${it.id}">${t?`<span class="t">= ${fmt(t)} ml</span>`:""}</div></div>
+    <div class="lotes">${L.map((l,i)=>`<div class="lote">
+        <select data-key="${key}" data-lote="${i}" class="${lleno(l.medida)?'has':''}">
+          <option value="">Medida de botella…</option>
+          ${CONFIG.medidasAlcohol.map(m=>`<option value="${m}" ${!l.otra && String(l.medida)===String(m)?"selected":""}>${mlTxt(m)}</option>`).join("")}
+          <option value="otra" ${l.otra?"selected":""}>Otra…</option>
+        </select>
+        ${l.otra?`<label style="display:flex;flex-direction:column;align-items:center;font-size:10px;color:#aeaeb2;gap:2px">¿cuántos ml?
+          <input type="number" inputmode="numeric" min="0" enterkeyhint="next" class="cj ${lleno(l.medida)?'has':''}" data-key="${key}" data-lote="${i}" data-k="medida" value="${l.medida??""}" placeholder="–"></label>`:""}
+        <label style="display:flex;flex-direction:column;align-items:center;font-size:10px;color:#aeaeb2;gap:2px">cerradas
+          <input type="number" inputmode="numeric" min="0" enterkeyhint="next" class="cj ${lleno(l.n)?'has':''}" data-key="${key}" data-lote="${i}" data-k="n" value="${l.n??""}" placeholder="–"></label>
+        ${L.length>1?`<button class="x" data-quitar="${key}" data-lote="${i}">×</button>`:""}
+      </div>`).join("")}</div>
+    <div class="bot">
+      <button class="link" data-mas="${key}">+ otra medida</button>
+      ${modo==="abierta"?`<div class="ins"><label>ml abierta${inp(key,"ml","cj")}</label></div>`:""}
+    </div></div>`;
+}
+
+const AYUDA = {
+  cerveza: { sueltas:"Botellas sueltas en este refri.", cajas:"Cajas/cartones cerrados + botellas sueltas." },
+  caguama: { abierta:"Cerradas = sin abrir. Abierta = ml aprox. que quedan (llena 1200 · mitad 600 · un cuarto 300). Si hay varias abiertas, suma los ml.",
+             cajas:"Cajas cerradas de 12 + caguamas cerradas sueltas." },
+  refrescos: { sueltas:"Botellas de 600 ml." },
+  preparacion: { abierta:"Cerradas + ml aprox. de la que está en uso.", cerradas:"Solo botellas/envases cerrados." },
+  insumo: { total:"Anota cuánto hay. Si no hay, pon 0.",
+            cerradas:"Elige la medida del paquete o botella y cuántos hay cerrados. Si no hay, pon 0." },
+  alcohol: { abierta:"Elige la medida de la botella. Si hay de dos medidas, toca “+ otra medida”. Abierta = ml aprox. que quedan.",
+             cerradas:"Elige la medida de la botella. Si hay de dos medidas, toca “+ otra medida”." }
+};
+
+function renderUbic(u){
+  let html = `<div class="hint"><b>Si no hay, pon 0.</b></div>`;
+  for(const secId of Object.keys(u.contar)){
+    const sec = SECS[secId], modo = u.contar[secId], ck = u.id+"|"+secId;
+    html += `<div class="secwrap ${S.plegado?.[ck]?"col":""}" id="sw_${u.id}_${secId}">
+      <button class="sech" data-plegar="${ck}"><span class="tt">${sec.titulo}<span class="st" id="st_${u.id}_${secId}"></span></span><span class="ch">▼</span></button>
+      <div class="secbody"><div class="hint" style="margin-top:0">${(AYUDA[secId]||AYUDA[sec.tipo])?.[modo]||""}</div>
+      ${sec.items.map(it => sec.tipo==="alcohol" ? filaAlcohol(u,it) : sec.tipo==="insumo" ? filaInsumo(u,secId,it) : filaNormal(u,secId,it)).join("")}</div></div>`;
+  }
+  $("body").innerHTML = html;
+  $("body").querySelectorAll("[data-plegar]").forEach(b=>b.onclick=()=>{
+    S.plegado = S.plegado||{}; S.plegado[b.dataset.plegar] = !S.plegado[b.dataset.plegar];
+    b.parentElement.classList.toggle("col", S.plegado[b.dataset.plegar]); guardar();
+  });
+  Object.keys(u.contar).forEach(secId=>estadoSec(u,secId));
+
+  // alcohol: medidas y lotes
+  $("body").querySelectorAll("select[data-lote]").forEach(sel=>sel.onchange=()=>{
+    const l = lotes(sel.dataset.key)[+sel.dataset.lote];
+    if(sel.value==="otra"){ l.otra=true; l.medida=""; guardar(); return render(false); }
+    if(l.otra){ l.otra=false; l.medida=sel.value; guardar(); return render(false); }
+    l.medida = sel.value;
+    sel.classList.toggle("has", sel.value!=="");
+    actualizar(u, sel.dataset.key); guardar();
+  });
+  $("body").querySelectorAll("[data-mas]").forEach(b=>b.onclick=()=>{ lotes(b.dataset.mas).push({medida:"",n:""}); guardar(); render(false); });
+  $("body").querySelectorAll("[data-quitar]").forEach(b=>b.onclick=()=>{ lotes(b.dataset.quitar).splice(+b.dataset.lote,1); guardar(); render(false); });
+
+  $("body").querySelectorAll("select[data-cap]").forEach(sel=>sel.onchange=()=>{
+    const x = V(sel.dataset.cap);
+    if(sel.value==="otra"){ x.otra=true; x.cap=""; guardar(); return render(false); }
+    if(x.otra){ x.otra=false; x.cap=sel.value; guardar(); return render(false); }
+    x.cap = sel.value; sel.classList.toggle("has", sel.value!=="");
+    if(sel.value){ MEDIDAS[sel.dataset.cap.split("|")[1]] = num(sel.value); try{ localStorage.setItem(MED_KEY, JSON.stringify(MEDIDAS)); }catch(e){} }
+    actualizar(u, sel.dataset.cap); guardar();
+  });
+  $("body").querySelectorAll("[data-est]").forEach(b=>b.onclick=()=>{
+    V(b.dataset.est).val = b.dataset.v; guardar();
+    b.parentElement.querySelectorAll("button").forEach(x=>x.className = x===b ? (b.dataset.v==="Comprar"?"on buy":"on ok") : "");
+    actualizar(u, b.dataset.est);
+  });
+  enlazar(key=>actualizar(u,key));
+  pie();
+}
+
+function subIns(u,secId,it){
+  const x=V(K(u,it)), modo=u.contar[secId], t=totalEn(u,secId,it);
+  if(!it.ml && num(x.sueltas)>0 && !num(x.cap)) return `<span style="color:var(--warn)">elige la medida ${it.unidad==="botella"?"de la botella":"del paquete"}</span>`;
+  const base = modo==="cerradas" ? (it.unidad==="botella"?"botellas cerradas":"paquetes cerrados") : "cerradas + ml de la abierta";
+  return `${base}${t?` · <span class="t">= ${fmt(t)} ${unBase(it)}</span>`:""}`;
+}
+function selMedida(key,it){
+  const x=V(key);
+  if(!lleno(x.cap) && !x.otra && MEDIDAS[it.id]) x.cap = String(MEDIDAS[it.id]); // recuerda la última medida
+  return `<label>medida<select class="cap ${lleno(x.cap)?'has':''}" data-cap="${key}">
+      <option value="">–</option>${medidasDe(it).map(m=>`<option value="${m}" ${!x.otra && String(x.cap)===String(m)?"selected":""}>${medTxt(m,it)}</option>`).join("")}
+      <option value="otra" ${x.otra?"selected":""}>Otra…</option>
+    </select></label>${x.otra?`<label>¿cuántos ${unBase(it)}?${inp(key,"cap","cj")}</label>`:""}`;
+}
+function filaInsumo(u,secId,it){
+  const key=K(u,it), val=V(key).val, modo=u.contar[secId];
+  if(it.unidad!=="estado" && modo==="cerradas"){
+    if(!esPaquete(it)) return `<div class="r compact" id="r_${u.id}_${it.id}"><div><div class="n">${it.nombre}</div><div class="s" id="s_${u.id}_${it.id}">en ${it.unidad}</div></div>
+      <div class="ins"><label>${it.unidad}${inp(key,"val")}</label></div></div>`;
+    return `<div class="r compact" id="r_${u.id}_${it.id}"><div><div class="n">${it.nombre}</div>
+      <div class="s" id="s_${u.id}_${it.id}">${subIns(u,secId,it)}</div></div>
+      <div class="ins">${it.ml?"":selMedida(key,it)}<label>${it.unidad==="botella"?"cerradas":"paquetes"}${inp(key,"sueltas","cj")}</label></div></div>`;
+  }
+  if(it.unidad==="estado") return `<div class="r compact" id="r_${u.id}_${it.id}"><div><div class="n">${it.nombre}</div><div class="s" id="s_${u.id}_${it.id}"></div></div>
+    <div class="est"><button class="${val==="Suficiente"?"on ok":""}" data-est="${key}" data-v="Suficiente">Suficiente</button>
+    <button class="${val==="Comprar"?"on buy":""}" data-est="${key}" data-v="Comprar">Comprar</button></div></div>`;
+  if(it.unidad==="botella"){
+    return `<div class="r compact" id="r_${u.id}_${it.id}"><div><div class="n">${it.nombre} <span class="ml">${mlTxt(it.ml)}</span></div>
+      <div class="s" id="s_${u.id}_${it.id}">${subIns(u,secId,it)}</div></div>
+      <div class="ins">${it.ml?"":selMedida(key,it)}<label>cerradas${inp(key,"sueltas","cj")}</label><label>ml abierta${inp(key,"ml","cj")}</label></div></div>`; }
+  return `<div class="r compact" id="r_${u.id}_${it.id}"><div><div class="n">${it.nombre}</div><div class="s" id="s_${u.id}_${it.id}">en ${it.unidad}</div></div>
+    <div class="ins"><label>${it.unidad}${inp(key,"val","",true)}</label></div></div>`;
+}
+
+function estadoSec(u,secId){
+  const its = SECS[secId].items, f = its.filter(it=>!completoEn(u,secId,it)).length;
+  const el = $(`st_${u.id}_${secId}`); if(!el) return;
+  const unidad = SECS[secId].tipo==="pz" ? "" : " ml";
+  const t = its.reduce((s,it)=>s+totalEn(u,secId,it),0);
+  el.className = "st " + (f===0 ? "ok" : (f<its.length ? "mid" : ""));
+  el.textContent = f===0 ? (SECS[secId].tipo==="insumo" ? "· ✓" : `· ✓ ${fmt(t)}${unidad}`) : `· faltan ${f} de ${its.length}`;
+}
+
+function actualizar(u,key){
+  const itId = key.split("|")[1];
+  for(const secId of Object.keys(u.contar)){
+    const it = SECS[secId].items.find(x=>x.id===itId); if(!it) continue;
+    const s = $(`s_${u.id}_${it.id}`), r = $(`r_${u.id}_${it.id}`);
+    if(SECS[secId].tipo==="alcohol"){ const t=totalEn(u,secId,it); s.innerHTML = t?`<span class="t">= ${fmt(t)} ml</span>`:""; }
+    else if(SECS[secId].tipo!=="insumo") s.innerHTML = subTxt(u,secId,it);
+    else if(esPaquete(it) && (it.unidad==="botella" || u.contar[secId]==="cerradas")) s.innerHTML = subIns(u,secId,it);
+    if(completoEn(u,secId,it)) r.classList.remove("miss");
+    estadoSec(u,secId);
+  }
+  pie();
+}
+
+function renderRev(){
+  const tot = (v,un)=>`${fmt(v)} <small>${un}</small>`;
+  const pend = pendientes();
+  let html = (pend.length ? `<div class="pend">⚠️ No se puede enviar todavía. Falta terminar: ${pend.map(i=>`<button data-ir="${i}">${PASOS[i].nombre}</button>`).join(", ")}</div>` : "") + `<div class="rev">`;
+  for(const secId of Object.keys(SECS)){
+    const sec=SECS[secId], ins = sec.tipo==="insumo";
+    html += `<div class="sec">${sec.titulo}${ins?"":" · total"}</div>` + sec.items.map(it=>{
+      const v = valGlobal(secId,it), col = v==="Comprar"?"var(--warn)":v==="Suficiente"?"var(--ok)":"";
+      return `<div class="r ${ins?"compact":""}"><div><div class="n">${it.nombre} <span class="ml">${mlTxt(it.ml)}</span></div></div>
+       <div class="tot" style="${col?`color:${col}`:""}">${v.replace(/ (\S+)$/," <small>$1</small>")}</div></div>`; }).join("");
+    if(secId==="caguama"){
+      const tc = sec.items.reduce((s,it)=>s+totalGlobal("caguama",it),0);
+      html += `<div class="r big"><div><div class="n"><b>Total caguama</b> <span style="font-size:10px;color:var(--muted)">(Loyverse)</span></div></div><div class="tot" style="color:var(--brand)">${tot(tc,"ml")}</div></div>`;
+    }
+  }
+  html += `<div class="sec">Notas (opcional)</div>
+    <textarea id="notas" placeholder="Botellas rotas, producto caducado, algo raro…">${S.notas||""}</textarea></div>`;
+  $("body").innerHTML = html;
+  $("notas").oninput = e=>{ S.notas=e.target.value; guardar(); };
+  $("body").querySelectorAll("[data-ir]").forEach(b=>b.onclick=()=>irA(+b.dataset.ir));
+  pie();
+}
+
+function renderFin(){
+  $("body").innerHTML = `<div class="done"><div class="big">✅</div><h2>¡Conteo enviado!</h2><p>Gracias, ${S.empleado}. Ya puedes abrir.</p></div>`;
+  $("ft").innerHTML = `<div class="sum"></div><button id="nuevo">Nuevo conteo</button>`;
+  $("nuevo").onclick = ()=>{ localStorage.removeItem(STORE_KEY); S=nuevoEstado(); render(); };
+}
+
+/* ---------------- pie ---------------- */
+function pie(msg){
+  const P = PASOS[S.paso];
+  if(!S.enviado) renderTabs();
+  let resumen = "";
+  const listas = PASOS.filter((p,i)=>p.tipo!=="rev" && !faltantes(i).length).length, totalP = PASOS.length-1;
+  if(P.tipo==="ubic"){
+    const f = faltantes(S.paso).length;
+    resumen = `<div>${f ? `Faltan aquí<b style="color:var(--brand)">${f}</b>` : `${P.nombre}<b style="color:var(--ok)">✓ Completo</b>`}</div>
+               <div>Listas<b>${listas} de ${totalP}</b></div>`;
+  } else resumen = `<div>Listas<b style="color:${listas===totalP?"var(--ok)":"var(--brand)"}">${listas} de ${totalP}</b></div>`;
+  const atras = S.paso>0 ? `<button class="back" id="atras">←</button>` : "";
+  const txt = P.tipo==="rev" ? (urlEnvio() ? "Enviar conteo" : "Enviar por WhatsApp")
+            : (pendientes().filter(i=>i!==S.paso).length ? "Siguiente →" : "Revisar →");
+  $("ft").innerHTML = `${atras}<div class="sum">${msg?`<span class="msg">${msg}</span>`:resumen}</div><button id="sig">${txt}</button>`;
+  if(atras) $("atras").onclick = ()=>irA(S.paso-1);
+  $("sig").onclick = siguiente;
+}
+
+/* ---------------- navegación ---------------- */
+function validar(i, marcar=true){
+  const P = PASOS[i];
+  if(!S.empleado){ $("who").classList.add("err"); window.scrollTo({top:0,behavior:"smooth"}); return "Selecciona tu nombre arriba"; }
+  const faltan = faltantes(i);
+  if(faltan.length){
+    if(marcar){ faltan.forEach(id=>{ const r=$(id); if(!r) return; r.classList.add("miss"); r.closest(".secwrap")?.classList.remove("col"); }); const f=$(faltan[0]); if(f && f.scrollIntoView) f.scrollIntoView({behavior:"smooth",block:"center"}); }
+    return `Faltan ${faltan.length} · pon 0 si no hay`;
+  }
+  return "";
+}
+// Se puede ir a cualquier pestaña en cualquier orden; solo el envío exige todo completo
+function irA(i){ if(i<0 || i>=PASOS.length) return; S.paso=i; guardar(); render(); }
+function faltantes(i){
+  const P = PASOS[i], f=[];
+  if(P.tipo==="ubic"){
+    for(const secId of Object.keys(P.u.contar))
+      SECS[secId].items.forEach(it=>{ if(!completoEn(P.u,secId,it)) f.push(`r_${P.u.id}_${it.id}`); });
+  }
+  return f;
+}
+function empezado(i){
+  const P = PASOS[i];
+  if(P.tipo==="ubic") return Object.keys(P.u.contar).some(secId=>SECS[secId].items.some(it=>{
+    const x=V(K(P.u,it)); return lleno(x.cajas)||lleno(x.sueltas)||lleno(x.ml)||lleno(x.val)||(x.lotes||[]).some(l=>lleno(l.n)||lleno(l.medida));
+  }));
+  return false;
+}
+function estadoPaso(i){
+  if(PASOS[i].tipo==="rev") return "";
+  return faltantes(i).length===0 ? "ok" : (empezado(i) ? "mid" : "");
+}
+const pendientes = () => PASOS.map((p,i)=>i).filter(i=>PASOS[i].tipo!=="rev" && faltantes(i).length);
+function siguiente(){
+  if(PASOS[S.paso].tipo==="rev") return enviar();
+  // marca lo que falta en esta pestaña pero deja seguir; va a la siguiente pendiente
+  const pend = pendientes().filter(i=>i!==S.paso);
+  const sigPend = pend.find(i=>i>S.paso) ?? pend[0];
+  irA(sigPend ?? PASOS.length-1);
+}
+
+$("emp").onchange = e=>{ S.empleado=e.target.value; $("who").classList.remove("err"); guardar(); pie(); };
+
+function enlazar(alCambiar){
+  const inputs = [...$("body").querySelectorAll("input")];
+  inputs.forEach((el,idx)=>{
+    el.oninput = ()=>{
+      let val = el.value; if(val!=="" && num(val)<0) val="0";
+      if(el.dataset.lote!==undefined) lotes(el.dataset.key)[+el.dataset.lote][el.dataset.k] = val;
+      else V(el.dataset.key)[el.dataset.k] = val;
+      if(el.dataset.k==="cap" && num(val)>0){ MEDIDAS[el.dataset.key.split("|")[1]] = num(val); try{ localStorage.setItem(MED_KEY, JSON.stringify(MEDIDAS)); }catch(e){} }
+      el.classList.toggle("has", val!=="");
+      alCambiar(el.dataset.key); guardar();
+    };
+    el.onkeydown = e=>{ if(e.key==="Enter"){ e.preventDefault(); const n=inputs[idx+1]; n ? n.focus() : (el.blur(), siguiente()); } };
+  });
+}
+
+/* ---------------- envío ---------------- */
+function payload(){
+  const det = {};
+  CONFIG.ubicaciones.forEach(u=>{
+    det[u.id] = {};
+    for(const secId of Object.keys(u.contar)) SECS[secId].items.forEach(it=>{
+      const x=V(K(u,it));
+      det[u.id][it.id] = SECS[secId].tipo==="insumo"
+        ? (it.unidad==="estado" ? { estado:x.val||"" }
+           : { unidad:unBase(it), medida:capBot(u,it)||null, cerradas:num(x.sueltas), abierta:num(x.ml), cantidad:num(x.val), total:totalEn(u,secId,it) })
+        : SECS[secId].tipo==="alcohol"
+        ? { botellas: lotes(K(u,it)).filter(l=>num(l.n)>0).map(l=>({medida_ml:num(l.medida), cerradas:num(l.n)})), ml_abierta:num(x.ml), total_ml:totalEn(u,secId,it) }
+        : { cajas:num(x.cajas), sueltas_o_cerradas:num(x.sueltas), ml_abierta:num(x.ml), total:totalEn(u,secId,it) };
+    });
+  });
+  return {
+    negocio: CONFIG.negocio, fecha: fechaISO, hora: new Date().toTimeString().slice(0,5),
+    empleado: S.empleado, notas: S.notas||"",
+    totales: Object.keys(SECS).filter(k=>SECS[k].tipo!=="insumo").flatMap(secId=>SECS[secId].items.map(it=>({
+      seccion:secId, id:it.id, nombre:it.nombre, unidad:unidadSec(secId), total:totalGlobal(secId,it) }))),
+    caguama_total_ml: SECS.caguama.items.reduce((s,it)=>s+totalGlobal("caguama",it),0),
+    insumos: Object.keys(SECS).filter(k=>SECS[k].tipo==="insumo").flatMap(secId=>SECS[secId].items.map(it=>({
+      grupo:SECS[secId].titulo, id:it.id, nombre:it.nombre, unidad:unidadIt(secId,it),
+      valor: it.unidad==="estado" ? estadoIns(secId,it) : totalGlobal(secId,it) }))),
+    detalle_por_ubicacion: det,
+    resumen_texto: textoWA()   // mensaje ya formateado (lo usa n8n para Telegram)
+  };
+}
+function textoWA(){
+  let t = `*Conteo ${CONFIG.negocio}* — ${fechaTxt}\nPor: ${S.empleado}\n`;
+  for(const secId of Object.keys(SECS)){
+    t += `\n*${SECS[secId].titulo}*\n`;
+    SECS[secId].items.forEach(it=>{ t += `• ${it.nombre}${it.ml?" "+mlTxt(it.ml):""}: *${valGlobal(secId,it)}*\n`; });
+    if(secId==="caguama") t += `• *Total caguama: ${fmt(SECS.caguama.items.reduce((s,it)=>s+totalGlobal("caguama",it),0))} ml*\n`;
+  }
+  if(S.notas) t += `\n*Notas:* ${S.notas}\n`;
+  return t;
+}
+async function enviar(){
+  if(!S.empleado){ $("who").classList.add("err"); window.scrollTo({top:0,behavior:"smooth"}); pie("Selecciona tu nombre arriba"); return; }
+  const pend = pendientes();
+  if(pend.length){ S.paso=pend[0]; render(); pie(validar(pend[0]).replace("Faltan",`${PASOS[pend[0]].nombre}: faltan`)); return; }
+  if(urlEnvio()){
+    $("sig").disabled = true; $("sig").textContent = "Enviando…";
+    try{
+      const r = await fetch(urlEnvio(),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload())});
+      if(!r.ok) throw new Error(r.status);
+    }catch(e){ pie("No se pudo enviar. Revisa internet y reintenta."); return; }
+  } else {
+    window.open("https://wa.me/"+(CONFIG.whatsapp||"")+"?text="+encodeURIComponent(textoWA()),"_blank");
+  }
+  S.enviado = true; guardar(); render();
+}
+
+// Botón "Borrar" solo en modo prueba: abre el enlace con #prueba al final (los empleados no lo ven)
+const MODO_PRUEBA = /prueba/i.test(location.hash + location.search);
+if(MODO_PRUEBA) $("resetWrap").style.display = "inline";
+// Borrar todo el conteo (pide un segundo toque para confirmar)
+let resetT;
+$("reset").onclick = ()=>{
+  const b=$("reset");
+  if(!b.classList.contains("conf")){
+    b.classList.add("conf"); b.textContent="¿Borrar todo? Toca otra vez";
+    resetT = setTimeout(()=>{ b.classList.remove("conf"); b.textContent="↺ Borrar"; }, 3000);
+    return;
+  }
+  clearTimeout(resetT);
+  localStorage.removeItem(STORE_KEY); S = nuevoEstado();
+  b.classList.remove("conf"); b.textContent="↺ Borrar";
+  $("who").classList.remove("err"); render();
+};
+
+render();
+</script>
+</body>
+</html>
